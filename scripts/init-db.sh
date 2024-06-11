@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	    CREATE DATABASE $DB_NAME;
+
+	    CREATE USER $DB_USER PASSWORD '$DB_PASSWORD';
+
+	    ALTER DATABASE $DB_NAME OWNER TO $DB_USER;
+
+	    ALTER USER $DB_USER SET SEARCH_PATH = 'public';
+EOSQL
