@@ -1,6 +1,24 @@
 version: "3"
 
 services:
+  rabbitmq:
+    image: rabbitmq:3.13.3
+    env_file:
+      - .env
+    depends_on:
+      - db
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    command: celery -A server.worker worker -c 1
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - rabbitmq
   db:
     image: postgres:16
     env_file:
@@ -16,6 +34,8 @@ services:
       - .env
     depends_on:
       - db
+      - worker
+      - rabbitmq
     volumes:
       - .:/app
 
