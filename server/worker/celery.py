@@ -6,8 +6,8 @@ app = Celery("worker", broker=app_config.broker_url)
 
 
 @app.task
-def process_csv_file_task():
-    with open("data/data1.csv", newline="") as csvfile:
+def process_csv_file_task(*, file_path: str):
+    with open(file_path, newline="") as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             print(", ".join(row))
