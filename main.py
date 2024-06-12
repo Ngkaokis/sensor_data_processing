@@ -1,6 +1,4 @@
-import csv
+from server.worker import process_csv_file_task
 
-with open("data/data1.csv", newline="") as csvfile:
-    reader = csv.reader(csvfile)
-    for row in reader:
-        print(", ".join(row))
+if __name__ == "__main__":
+    process_csv_file_task.delay()
