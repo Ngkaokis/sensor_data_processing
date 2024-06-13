@@ -16,5 +16,5 @@ class Sensor(Base):
     type: Mapped[str] = mapped_column(Text, nullable=False)
 
     sensor_readings: Mapped[List["SensorReading"]] = relationship(
-        back_populates="sensor"
+        back_populates="sensor", default_factory=lambda: []
     )
