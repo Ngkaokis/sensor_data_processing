@@ -19,6 +19,9 @@ services:
     depends_on:
       - db
       - rabbitmq
+    deploy:
+      mode: replicated
+      replicas: ${WORKER_NUMBER}
   db:
     image: postgres:16
     env_file:
