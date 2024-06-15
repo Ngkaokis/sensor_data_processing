@@ -8,6 +8,7 @@ from server.models.sensor import Sensor
 from server.models.sensor_reading import SensorReading
 from datetime import datetime
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 
 app = Celery("worker", broker=app_config.broker_url)
 
@@ -38,5 +39,7 @@ def process_csv_file_task(*, file_path: str):
                     sensor_id=sensor.id,
                     sensor=sensor,
                 )
-                records.append(record)
-        session.add_all(records)
+                records.append(record.values(exclude={"id"}))
+        # NOTE: Use postgresql ability to skip records that violated constriant
+        insert_stmt = insert(SensorReading).values(records).on_conflict_do_nothing()
+        session.execute(insert_stmt)
