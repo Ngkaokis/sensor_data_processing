@@ -2,33 +2,22 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 import sqlalchemy as sa
 from sqlalchemy.orm import Session, sessionmaker
-from contextlib import contextmanager
-from typing import Iterator
+from typing import Optional
 
 import sqlalchemy as sa
 
-from ..config import app_config
-
-_db_engine = None
+from server.models.db_config import DbConfig
 
 
-def create_app_engine():
+def create_app_engine(db_url: Optional[str] = None):
     return sa.create_engine(
-        app_config.db_url,
+        db_url or DbConfig().db_url(),
     )
 
 
-def get_db_engine():
-    global _db_engine
-    if _db_engine:
-        return _db_engine
-    _db_engine = create_app_engine()
-    return _db_engine
-
-
 @contextmanager
-def open_db_session(read_write=True) -> Iterator[Session]:
-    engine = get_db_engine()
+def open_db_session(db_url: Optional[str] = None, read_write=True) -> Iterator[Session]:
+    engine = create_app_engine(db_url)
 
     Session = sessionmaker(engine, expire_on_commit=False)
     session = Session()

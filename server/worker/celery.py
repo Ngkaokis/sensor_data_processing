@@ -4,6 +4,7 @@ from server.config import app_config
 import csv
 
 from server.models import open_db_session
+from server.models.db_config import DbConfig
 from server.models.sensor import Sensor
 from server.models.sensor_reading import SensorReading
 from datetime import datetime
@@ -32,8 +33,9 @@ def parse_row(row: dict):
 
 
 @app.task
-def process_csv_file_task(*, file_path: str):
-    with open_db_session() as session:
+def process_csv_file_task(*, file_path: str, db_config: dict):
+    config = DbConfig.from_json(db_config)
+    with open_db_session(config.db_url()) as session:
         records = []
         with open(file_path, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
