@@ -19,6 +19,18 @@ def get_sensor_by_name(session: Session, name: str) -> Sensor | None:
     return session.scalar(stmt)
 
 
+def parse_row(row: dict):
+    try:
+        return {
+            "sensor_name": row["sensorName"],
+            "timestamp": datetime.fromisoformat(row["timestamp"]),
+            "value": float(row["value"]),
+        }
+    except Exception as e:
+        print(e)
+        return None
+
+
 @app.task
 def process_csv_file_task(*, file_path: str):
     with open_db_session() as session:
@@ -26,16 +38,21 @@ def process_csv_file_task(*, file_path: str):
         with open(file_path, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                sensor = get_sensor_by_name(session, row["sensor_name"])
+                parsed_row = parse_row(row)
+                if parsed_row is None:
+                    continue
+                sensor = get_sensor_by_name(session, parsed_row["sensor_name"])
                 if sensor is None:
                     # NOTE: I expect sensors in use are already in DB. If not, create a new one with unknown sensor type
-                    sensor = Sensor(name=row["sensor_name"], type="unknown_sensor_type")
+                    sensor = Sensor(
+                        name=parsed_row["sensor_name"], type="unknown_sensor_type"
+                    )
                     session.add(sensor)
                     session.commit()
 
                 record = SensorReading(
-                    value=float(row["value"]),
-                    timestamp=datetime.fromisoformat(row["timestamp"]),
+                    value=parsed_row["value"],
+                    timestamp=parsed_row["timestamp"],
                     sensor_id=sensor.id,
                     sensor=sensor,
                 )
