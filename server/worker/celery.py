@@ -1,5 +1,7 @@
+import logging
 from sqlalchemy.orm import Session
 from celery import Celery
+from celery.signals import after_setup_logger
 from server.config import app_config
 import csv
 
@@ -11,7 +13,24 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
+from server.worker.utils import get_log_level
+
+logger = logging.getLogger(__name__)
+
 app = Celery("worker", broker=app_config.broker_url)
+
+
+@after_setup_logger.connect
+def setup_loggers(logger, *args, **kwargs):
+    fh = logging.FileHandler(app_config.log_file or "logs/celery.log")
+    fh.setLevel(get_log_level())
+
+    formatter = logging.Formatter(
+        "%(asctime)s  %(levelname)s  [pid:%(process)d] [%(name)s %(filename)s->%(funcName)s:%(lineno)s] %(message)s"
+    )
+    fh.setFormatter(formatter)
+
+    logger.addHandler(fh)
 
 
 def get_sensor_by_name(session: Session, name: str) -> Sensor | None:
@@ -20,7 +39,7 @@ def get_sensor_by_name(session: Session, name: str) -> Sensor | None:
     return session.scalar(stmt)
 
 
-def parse_row(row: dict):
+def parse_row(row: dict, file_path: str):
     try:
         return {
             "sensor_name": row["sensorName"],
@@ -28,7 +47,7 @@ def parse_row(row: dict):
             "value": float(row["value"]),
         }
     except Exception as e:
-        print(e)
+        logger.exception(f"Failed to parse csv row {row}. File Path: {file_path}")
         return None
 
 
@@ -40,7 +59,7 @@ def process_csv_file_task(*, file_path: str, db_config: dict):
         with open(file_path, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                parsed_row = parse_row(row)
+                parsed_row = parse_row(row, file_path)
                 if parsed_row is None:
                     continue
                 sensor = get_sensor_by_name(session, parsed_row["sensor_name"])
