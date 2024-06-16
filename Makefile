@@ -29,3 +29,8 @@ upgrade-db:
 .PHONY: downgrade-db
 downgrade-db:
 	docker-compose run --rm --no-deps worker alembic downgrade -1
+
+.PHONY: test
+test:
+	docker-compose run --rm --no-deps worker python -m unittest
+
