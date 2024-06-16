@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.orm import Session
-import csv
+import pandas as pd
 
 from server.models import open_db_session
 from server.models.db_config import DbConfig
@@ -12,6 +12,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
 logger = logging.getLogger(__name__)
+
+CHUNK_SIZE = 10000
 
 
 def get_sensor_by_name(session: Session, name: str) -> Sensor | None:
@@ -32,33 +34,37 @@ def parse_row(row: dict, file_path: str):
         return None
 
 
-@app.task
+@app.task()
 def process_csv_file_task(*, file_path: str, db_config: dict):
     config = DbConfig.from_json(db_config)
-    with open_db_session(config.db_url()) as session:
-        records = []
-        with open(file_path, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                parsed_row = parse_row(row, file_path)
-                if parsed_row is None:
-                    continue
-                sensor = get_sensor_by_name(session, parsed_row["sensor_name"])
-                if sensor is None:
-                    # NOTE: I expect sensors in use are already in DB. If not, create a new one with unknown sensor type
-                    sensor = Sensor(
-                        name=parsed_row["sensor_name"], type="unknown_sensor_type"
-                    )
-                    session.add(sensor)
-                    session.commit()
+    records = []
+    # NOTE: Chop the csv into chunks to avoid huge transaction
+    with pd.read_csv(file_path, chunksize=CHUNK_SIZE) as chunks:
+        for chunk in chunks:
+            with open_db_session(config.db_url()) as session:
+                chunk = chunk.reset_index()
+                for index, row in chunk.iterrows():
+                    parsed_row = parse_row(row, file_path)
+                    if parsed_row is None:
+                        continue
+                    sensor = get_sensor_by_name(session, parsed_row["sensor_name"])
+                    if sensor is None:
+                        # NOTE: I expect sensors in use are already in DB. If not, create a new one with unknown sensor type
+                        sensor = Sensor(
+                            name=parsed_row["sensor_name"], type="unknown_sensor_type"
+                        )
+                        session.add(sensor)
+                        session.commit()
 
-                record = SensorReading(
-                    value=parsed_row["value"],
-                    timestamp=parsed_row["timestamp"],
-                    sensor_id=sensor.id,
-                    sensor=sensor,
+                    record = SensorReading(
+                        value=parsed_row["value"],
+                        timestamp=parsed_row["timestamp"],
+                        sensor_id=sensor.id,
+                        sensor=sensor,
+                    )
+                    records.append(record.values(exclude={"id"}))
+                # NOTE: Use postgresql ability to skip records that violated constriant
+                insert_stmt = (
+                    insert(SensorReading).values(records).on_conflict_do_nothing()
                 )
-                records.append(record.values(exclude={"id"}))
-        # NOTE: Use postgresql ability to skip records that violated constriant
-        insert_stmt = insert(SensorReading).values(records).on_conflict_do_nothing()
-        session.execute(insert_stmt)
+                session.execute(insert_stmt)
