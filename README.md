@@ -2,6 +2,9 @@
 
 This repo implement Work Queue System to process multiple large csv files in a distributed way
 
+To scale up the system, we can increase the worker replicas / concurrency.
+But please be reminded that we need to increase the connection pool size of the database as well
+
 ### TL;DR
 
 ```
