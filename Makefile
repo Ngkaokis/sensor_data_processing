@@ -1,12 +1,31 @@
+.PHONY: setup
+setup:
+	cp .env.example .env
+	docker-compose build
+	docker-compose up -d db
+	sleep 10 # Wait pg to init
+	make upgrade-db
+
+.PHONY: start
+start:
+	docker compose up
+
+.PHONY: enqueue
+enqueue:
+	docker compose run --rm --no-deps app $(ARGS)
+
+.PHONY: generate-data
+generate-data:
+	docker compose run --rm --no-deps worker python ./scripts/generate_data.py $(ARGS)
+
 .PHONY: create-migration
 create-migration:
-	alembic revision --autogenerate -m "$(NAME)"
-
+	docker-compose run --rm --no-deps worker alembic revision --autogenerate -m "$(NAME)"
 
 .PHONY: upgrade-db
 upgrade-db:
-	alembic upgrade head
+	docker-compose run --rm --no-deps worker alembic upgrade head
 
 .PHONY: downgrade-db
 downgrade-db:
-	alembic downgrade -1
+	docker-compose run --rm --no-deps worker alembic downgrade -1
