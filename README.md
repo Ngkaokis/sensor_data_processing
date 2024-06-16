@@ -5,6 +5,10 @@ This repo implement Work Queue System to process multiple large csv files in a d
 ### Setup
 
 ```
+./scripts/setup.sh
+
+or
+
 make setup
 ```
 
