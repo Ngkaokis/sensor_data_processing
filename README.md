@@ -2,6 +2,14 @@
 
 This repo implement Work Queue System to process multiple large csv files in a distributed way
 
+### TL;DR
+
+```
+make setup
+make start
+make enqueue ARGS="data"
+```
+
 ### Setup
 
 ```
