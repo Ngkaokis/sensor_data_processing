@@ -8,7 +8,7 @@ setup:
 
 .PHONY: start
 start:
-	docker compose up
+	docker compose up -d
 
 .PHONY: enqueue
 enqueue:
