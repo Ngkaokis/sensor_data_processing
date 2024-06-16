@@ -50,6 +50,12 @@ or
 make enqueue ARGS="[--size] [--output]"
 ```
 
+### Test
+
+```
+make test
+```
+
 ### Monitor the job status
 
 ```
