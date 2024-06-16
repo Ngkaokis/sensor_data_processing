@@ -50,6 +50,13 @@ or
 make enqueue ARGS="[--size] [--output]"
 ```
 
+### Monitor the job status
+
+```
+1. docker compose up monitor
+2. Access the panel via http://localhost:5555/
+```
+
 ### ER diagram
 
 ![alt er_diagram](./docs/er_diagram.png)
