@@ -25,7 +25,7 @@ if __name__ == "__main__":
         f = os.path.join(args.directory, filename)
         if os.path.isfile(f):
             app.send_task(
-                "server.worker.celery.process_csv_file_task",
+                "server.worker.process_csv_file.process_csv_file_task",
                 kwargs={
                     "file_path": f,
                     "db_config": {
