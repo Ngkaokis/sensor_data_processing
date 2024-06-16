@@ -46,6 +46,12 @@ make enqueue ARGS="[--size] [--output]"
 
 ![alt er_diagram](./docs/er_diagram.png)
 
+### Table Structure
+
+![alt sensor_table_structure](./docs/sensor_table_structure.png)
+
+![alt sensor_reading_table_structure](./docs/sensor_reading_table_structure.png)
+
 ### Tech Stack
 
 - Celery
