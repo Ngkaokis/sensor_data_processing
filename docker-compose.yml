@@ -31,10 +31,10 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
-  app:
+  enqueue:
     build: .
     profiles:
-      - job
+      - enqueue
     env_file:
       - .env
     depends_on:

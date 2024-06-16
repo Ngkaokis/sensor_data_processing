@@ -12,7 +12,7 @@ start:
 
 .PHONY: enqueue
 enqueue:
-	docker compose run --rm --no-deps app $(ARGS)
+	docker compose run --rm --no-deps enqueue $(ARGS)
 
 .PHONY: generate-data
 generate-data:
