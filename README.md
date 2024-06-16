@@ -46,11 +46,11 @@ make enqueue ARGS="[-h] [--dbhost DBHOST] [--dbname DBNAME] [--dbuser DBUSER] [-
 ### Generate Data
 
 ```
-docker compose run --rm --no-deps worker [--size] [--output]
+docker compose run --rm --no-deps worker python ./scripts/generate_data.py [--size] [--output]
 
 or
 
-make enqueue ARGS="[--size] [--output]"
+make generate-data ARGS="[--size] [--output]"
 ```
 
 ### Test
